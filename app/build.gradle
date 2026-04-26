@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         // MATCHING GOOGLE-SERVICES.JSON
-        applicationId "com.example.meditech"
+        applicationId "com.example.meditechapp"
         minSdk 24
         targetSdk 34
         versionCode 1
