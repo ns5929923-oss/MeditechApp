@@ -1,5 +1,6 @@
 package com.example.meditech.ui.screens
 
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,14 +20,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.meditech.ui.navigation.Screen
+import com.example.meditech.viewmodels.AuthViewModel
 
 @Composable
 fun LoginScreen(navController: NavController, role: String = "doctor") {
@@ -41,12 +45,34 @@ fun RegisterScreen(navController: NavController) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthScreen(navController: NavController, isLoginInitial: Boolean) {
+    val viewModel: AuthViewModel = viewModel()
+    val authState by viewModel.authState.collectAsState()
+    val context = LocalContext.current
+
     var isLogin by remember { mutableStateOf(isLoginInitial) }
     var isProfessional by remember { mutableStateOf(true) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
+
+    // Handle Success and Error states
+    LaunchedEffect(authState) {
+        authState.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearError()
+        }
+        if (authState.isSuccess) {
+            val targetRoute = if (authState.userRole == "doctor") {
+                Screen.DoctorDashboard.route
+            } else {
+                Screen.HospitalDashboard.route
+            }
+            navController.navigate(targetRoute) {
+                popUpTo(Screen.Landing.route) { inclusive = true }
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -189,12 +215,14 @@ fun AuthScreen(navController: NavController, isLoginInitial: Boolean) {
             // Primary Button
             Button(
                 onClick = { 
-                    if (isProfessional) {
-                        navController.navigate(Screen.DoctorDashboard.route)
+                    if (isLogin) {
+                        viewModel.login(email, password)
                     } else {
-                        navController.navigate(Screen.HospitalDashboard.route)
+                        val role = if (isProfessional) "doctor" else "hospital"
+                        viewModel.register(email, name, password, role)
                     }
                 },
+                enabled = !authState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -217,19 +245,23 @@ fun AuthScreen(navController: NavController, isLoginInitial: Boolean) {
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = if (isLogin) "Secure Access" else "Join MediTech",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(
-                            imageVector = if (isLogin) Icons.Default.Login else Icons.Default.ArrowForward,
-                            contentDescription = null,
-                            tint = Color.White
-                        )
+                    if (authState.isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = if (isLogin) "Secure Access" else "Join MediTech",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = if (isLogin) Icons.Default.Login else Icons.Default.ArrowForward,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                        }
                     }
                 }
             }
