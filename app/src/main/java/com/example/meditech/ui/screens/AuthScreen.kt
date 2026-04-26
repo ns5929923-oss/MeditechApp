@@ -29,7 +29,7 @@ import androidx.navigation.NavController
 import com.example.meditech.ui.navigation.Screen
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(navController: NavController, role: String = "doctor") {
     AuthScreen(navController, isLoginInitial = true)
 }
 

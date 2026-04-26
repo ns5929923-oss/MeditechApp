@@ -15,9 +15,18 @@ import com.example.meditech.ui.navigation.Screen
 import com.example.meditech.ui.theme.MediTechTheme
 import com.example.meditech.ui.screens.*
 
+import android.util.Log
+import com.google.firebase.FirebaseApp
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FieldValue
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Firebase is now correctly initialized via the google-services plugin.
+        // No manual initialization check needed for production.
+
         setContent {
             MediTechTheme {
                 Surface(

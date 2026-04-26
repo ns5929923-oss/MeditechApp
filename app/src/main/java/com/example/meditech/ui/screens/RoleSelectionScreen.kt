@@ -1,15 +1,14 @@
 package com.example.meditech.ui.screens
 
-import android.text.Layout
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import java.lang.reflect.Modifier
 
 @Composable
 fun RoleSelectionScreen(navController: NavController) {
@@ -18,7 +17,7 @@ fun RoleSelectionScreen(navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
-        horizontalAlignment = Layout.Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         
@@ -28,7 +27,7 @@ fun RoleSelectionScreen(navController: NavController) {
 
         Button(
             onClick = { navController.navigate("login/doctor") },
-            modifier = androidx.compose.ui.Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text("Login as Doctor")
         }
@@ -37,7 +36,7 @@ fun RoleSelectionScreen(navController: NavController) {
 
         Button(
             onClick = { navController.navigate("login/hospital") },
-            modifier = androidx.compose.ui.Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text("Login as Hospital")
         }
