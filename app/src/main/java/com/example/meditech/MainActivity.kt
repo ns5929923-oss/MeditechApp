@@ -37,7 +37,22 @@ class MainActivity : ComponentActivity() {
                         composable(Screen.AdminPanel.route) { AdminPanelScreen(navController) }
                         composable(Screen.JobListings.route) { JobListingsScreen(navController) }
                         composable(Screen.CasePortfolio.route) { CasePortfolioScreen(navController) }
-                        composable(Screen.SubscriptionPlans.route) { SubscriptionPlansScreen(navController) }
+                        composable("subscription/{role}") { backStackEntry ->
+
+                            val role = backStackEntry.arguments?.getString("role") ?: "doctor"
+
+                            SubscriptionPlansScreen(
+                                navController = navController,
+                                role = role
+                            )}
+                        composable("roleSelection") {
+                            RoleSelectionScreen(navController)
+                        }
+
+                        composable("login/{role}") { backStackEntry ->
+                            val role = backStackEntry.arguments?.getString("role") ?: "doctor"
+                            LoginScreen(navController, role)
+                        }
                     }
                 }
             }

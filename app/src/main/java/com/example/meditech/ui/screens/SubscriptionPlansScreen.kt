@@ -25,7 +25,12 @@ import com.example.meditech.ui.components.MediTechTopBar
 import com.example.meditech.ui.navigation.Screen
 
 @Composable
-fun SubscriptionPlansScreen(navController: NavController) {
+fun SubscriptionPlansScreen(
+    navController: NavController,
+    role: String   // ✅ role added
+) {
+    val isDoctor = role == "doctor"
+
     Scaffold(
         topBar = { MediTechTopBar() },
         bottomBar = { MediTechBottomBar(navController, "settings") }
@@ -71,50 +76,79 @@ fun SubscriptionPlansScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Basic Plan
-            PlanCard(
-                name = "Basic",
-                price = "$0",
-                description = "Essential clinical tools",
-                features = listOf(
-                    "Up to 50 Patient Profiles" to true,
-                    "Standard Analytics Dashboard" to true,
-                    "AI Diagnosis Assistance" to false
-                ),
-                buttonText = "Continue with Basic",
-                isHighlighted = false
-            )
+            // 🔷 ROLE BASED UI
+            if (isDoctor) {
 
-            Spacer(modifier = Modifier.height(24.dp))
+                // ✅ DOCTOR PLANS
+                PlanCard(
+                    name = "Basic",
+                    price = "₹0",
+                    description = "View Jobs",
+                    features = listOf(
+                        "Browse jobs" to true,
+                        "Apply limited jobs" to true,
+                        "Upload portfolio" to false
+                    ),
+                    buttonText = "Continue",
+                    isHighlighted = false,
+                    onClick = {
+                        // TODO: Save subscription in Firebase
+                    }
 
-            // Professional Plan
-            PlanCard(
-                name = "Professional",
-                price = "$49",
-                description = "Advanced medical precision",
-                features = listOf(
-                    "Unlimited Patient Profiles" to true,
-                    "AI-Powered Predictive Diagnosis" to true,
-                    "Priority Support 24/7" to true,
-                    "Cross-Institutional Data Sync" to true
-                ),
-                buttonText = "Upgrade to Professional",
-                isHighlighted = true
-            )
+                )
 
-            Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            // Trust Badge
-            Icon(Icons.Default.VerifiedUser, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Compliant with HIPAA, GDPR, and global medical data safety standards.",
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
-            
-            Spacer(modifier = Modifier.height(48.dp))
+                PlanCard(
+                    name = "Premium",
+                    price = "₹199",
+                    description = "Advance Features",
+                    features = listOf(
+                        "Unlimited applications" to true,
+                        "Upload portfolio" to true,
+                        "Priority visibility" to true
+                    ), buttonText = "Upgrade",
+                    isHighlighted = true,
+                    onClick = {
+                        // TODO: Save subscription in Firebase
+                    }
+                )
+
+            } else {
+
+
+                // ✅ HOSPITAL PLANS
+                PlanCard(
+                    name = "Basic",
+                    price = "₹0",
+                    description = "Limited Hiring",
+                    features = listOf(
+                        "Post 2 jobs" to true,
+                        "Basic listing" to true,
+                        "Priority listing" to false
+                    ),
+                    buttonText = "Start",
+                    isHighlighted = false,
+                    onClick = {}
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                PlanCard(
+                    name = "Premium",
+                    price = "₹2999",
+                    description = "Unlimited Hiring",
+                    features = listOf(
+                        "Unlimited jobs" to true,
+                        "Priority listing" to true,
+                        "Top visibility" to true
+                    ),
+                    buttonText = "Upgrade",
+                    isHighlighted = true,
+                    onClick = {}
+                )
+            }
+
         }
     }
 }
@@ -126,25 +160,37 @@ fun PlanCard(
     description: String,
     features: List<Pair<String, Boolean>>,
     buttonText: String,
-    isHighlighted: Boolean
+    isHighlighted: Boolean,
+    onClick: () -> Unit   // ✅ comma fixed
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         color = Color.White,
         shadowElevation = if (isHighlighted) 8.dp else 2.dp,
-        border = if (isHighlighted) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+        border = if (isHighlighted)
+            androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        else null
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
+
             if (isHighlighted) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.End)
                         .offset(x = 24.dp, y = (-24).dp)
-                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(bottomStart = 12.dp))
+                        .background(
+                            MaterialTheme.colorScheme.primary,
+                            RoundedCornerShape(bottomStart = 12.dp)
+                        )
                         .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
-                    Text("MOST POPULAR", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        "MOST POPULAR",
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
@@ -154,12 +200,34 @@ fun PlanCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text(name, style = MaterialTheme.typography.headlineMedium, color = if (isHighlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                    Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        name,
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = if (isHighlighted)
+                            MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
+
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(price, style = MaterialTheme.typography.displayLarge, fontSize = 32.sp, color = if (isHighlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                    Text("PER MONTH", style = MaterialTheme.typography.labelLarge, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        price,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isHighlighted)
+                            MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        "PER MONTH",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 
@@ -170,17 +238,26 @@ fun PlanCard(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 features.forEach { (feature, isIncluded) ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
+
                         Icon(
-                            imageVector = if (isIncluded) Icons.Default.CheckCircle else Icons.Default.Cancel,
+                            imageVector = if (isIncluded)
+                                Icons.Default.CheckCircle
+                            else Icons.Default.Cancel,
                             contentDescription = null,
-                            tint = if (isIncluded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            tint = if (isIncluded)
+                                MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                             modifier = Modifier.size(20.dp)
                         )
+
                         Spacer(modifier = Modifier.width(8.dp))
+
                         Text(
                             text = feature,
                             style = MaterialTheme.typography.bodySmall,
-                            color = if (isIncluded) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            color = if (isIncluded)
+                                MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                         )
                     }
                 }
@@ -189,7 +266,7 @@ fun PlanCard(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { },
+                onClick = onClick,   // ✅ FIXED
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = if (isHighlighted) {
@@ -198,24 +275,38 @@ fun PlanCard(
                     ButtonDefaults.buttonColors(containerColor = Color.White)
                 },
                 contentPadding = if (isHighlighted) PaddingValues() else ButtonDefaults.ContentPadding,
-                border = if (!isHighlighted) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null
+                border = if (!isHighlighted)
+                    androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                else null
             ) {
+
                 if (isHighlighted) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(
                                 Brush.linearGradient(
-                                    colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer)
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary,
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    )
                                 )
                             )
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(buttonText, color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(
+                            buttonText,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 } else {
-                    Text(buttonText, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = buttonText,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }

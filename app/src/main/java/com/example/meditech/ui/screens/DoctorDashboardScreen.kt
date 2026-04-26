@@ -1,12 +1,9 @@
 package com.example.meditech.ui.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -40,11 +37,7 @@ fun DoctorDashboardScreen(navController: NavController) {
                 .padding(16.dp)
         ) {
             // Welcome Section
-            Text(
-                text = "Hello, Dr. Smith",
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
+
             Text(
                 text = "Here is your clinical overview for today.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -133,10 +126,17 @@ fun DoctorDashboardScreen(navController: NavController) {
 
             // Subscription Plan
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        navController.navigate("subscription/doctor")   // ✅ THIS LINE ADDED
+                    },
                 shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                )
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
@@ -147,21 +147,34 @@ fun DoctorDashboardScreen(navController: NavController) {
                         Box(
                             modifier = Modifier
                                 .size(48.dp)
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                                .background(
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    CircleShape
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(Icons.Default.Verified, null, tint = MaterialTheme.colorScheme.primary)
                         }
+
                         Spacer(modifier = Modifier.width(16.dp))
+
                         Column {
-                            Text("CURRENT PLAN", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                "CURRENT PLAN",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                             Text("Elite Tier", style = MaterialTheme.typography.headlineSmall)
                         }
                     }
-                    Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                    Icon(
+                        Icons.Default.ChevronRight,
+                        null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
-
             Spacer(modifier = Modifier.height(24.dp))
 
             // Interviews
@@ -173,29 +186,31 @@ fun DoctorDashboardScreen(navController: NavController) {
                 Text("Interviews", style = MaterialTheme.typography.headlineMedium)
                 Text("VIEW ALL", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             InterviewItem(
                 time = "TODAY • 14:30",
                 hospital = "St. Jude Medical Center",
                 position = "Chief Surgeon Interview",
-                isActive = true
+                isActive = true,
+                isLast = false
             )
-            
+            }
             Spacer(modifier = Modifier.height(12.dp))
-            
-            InterviewItem(
-                time = "TOMORROW • 10:00",
-                hospital = "City General Hospital",
-                position = "Cardiology Department Screening",
-                isActive = false
-            )
+
+        InterviewItem(
+            time = "TOMORROW • 10:00",
+            hospital = "City General Hospital",
+            position = "Cardiology Department Screening",
+            isActive = false,
+            isLast = true
+        )
 
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
-}
+
 
 @Composable
 fun StatsCard(
@@ -225,7 +240,8 @@ fun InterviewItem(
     time: String,
     hospital: String,
     position: String,
-    isActive: Boolean
+    isActive: Boolean,
+    isLast: Boolean
 ) {
     Row(modifier = Modifier.fillMaxWidth()) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -258,3 +274,4 @@ fun InterviewItem(
         }
     }
 }
+

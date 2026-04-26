@@ -100,7 +100,7 @@ fun HospitalDashboardScreen(navController: NavController) {
                         )
                     }
                     Button(
-                        onClick = { },
+                        onClick = { navController.navigate("subscription/hospital")},
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                         shape = RoundedCornerShape(12.dp)
                     ) {
