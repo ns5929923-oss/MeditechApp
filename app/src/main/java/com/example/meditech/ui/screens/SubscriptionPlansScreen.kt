@@ -86,8 +86,8 @@ fun SubscriptionPlansScreen(
                     description = "View Jobs",
                     features = listOf(
                         "Browse jobs" to true,
-                        "Apply limited jobs" to true,
-                        "Upload portfolio" to false
+                        "Apply limited jobs(1 Application only)" to true,
+                        "Upload portfolio(2 cases only)" to false
                     ),
                     buttonText = "Continue",
                     isHighlighted = false,
@@ -101,7 +101,7 @@ fun SubscriptionPlansScreen(
 
                 PlanCard(
                     name = "Premium",
-                    price = "₹199",
+                    price = "₹799",
                     description = "Advance Features",
                     features = listOf(
                         "Unlimited applications" to true,

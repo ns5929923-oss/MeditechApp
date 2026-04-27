@@ -23,6 +23,7 @@ import com.example.meditech.ui.components.MediTechTopBar
 import com.example.meditech.ui.navigation.Screen
 import com.example.meditech.viewmodels.AuthViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CasePortfolioScreen(navController: NavController) {
     val authViewModel: AuthViewModel = viewModel()

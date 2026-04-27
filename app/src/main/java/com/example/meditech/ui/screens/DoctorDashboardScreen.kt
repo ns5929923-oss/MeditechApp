@@ -182,7 +182,7 @@ fun DoctorDashboardScreen(navController: NavController) {
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.primary
                             )
-                            Text("Elite Tier", style = MaterialTheme.typography.headlineSmall)
+                            Text("Basic", style = MaterialTheme.typography.headlineSmall)
                         }
                     }
 
