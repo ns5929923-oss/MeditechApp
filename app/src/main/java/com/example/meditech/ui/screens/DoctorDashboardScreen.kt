@@ -17,15 +17,29 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.meditech.ui.components.MediTechBottomBar
 import com.example.meditech.ui.components.MediTechTopBar
 import com.example.meditech.ui.navigation.Screen
+import com.example.meditech.viewmodels.AuthViewModel
 
 @Composable
 fun DoctorDashboardScreen(navController: NavController) {
+    val authViewModel: AuthViewModel = viewModel()
+    
     Scaffold(
-        topBar = { MediTechTopBar() },
+        topBar = { 
+            MediTechTopBar(
+                showLogout = true,
+                onLogout = {
+                    authViewModel.logout()
+                    navController.navigate(Screen.Landing.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            ) 
+        },
         bottomBar = { MediTechBottomBar(navController, Screen.DoctorDashboard.route) }
     ) { paddingValues ->
         Column(
@@ -37,7 +51,11 @@ fun DoctorDashboardScreen(navController: NavController) {
                 .padding(16.dp)
         ) {
             // Welcome Section
-
+            Text(
+                text = "Welcome Back,",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
             Text(
                 text = "Here is your clinical overview for today.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -129,7 +147,7 @@ fun DoctorDashboardScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        navController.navigate("subscription/doctor")   // ✅ THIS LINE ADDED
+                        navController.navigate("subscription/doctor")
                     },
                 shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
@@ -196,21 +214,19 @@ fun DoctorDashboardScreen(navController: NavController) {
                 isActive = true,
                 isLast = false
             )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-
-        InterviewItem(
-            time = "TOMORROW • 10:00",
-            hospital = "City General Hospital",
-            position = "Cardiology Department Screening",
-            isActive = false,
-            isLast = true
-        )
+            
+            InterviewItem(
+                time = "TOMORROW • 10:00",
+                hospital = "City General Hospital",
+                position = "Cardiology Department Screening",
+                isActive = false,
+                isLast = true
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
-
+}
 
 @Composable
 fun StatsCard(
@@ -251,12 +267,14 @@ fun InterviewItem(
                     .background(if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, CircleShape)
                     .border(2.dp, Color.White, CircleShape)
             )
-            Box(
-                modifier = Modifier
-                    .width(1.dp)
-                    .height(64.dp)
-                    .background(MaterialTheme.colorScheme.outlineVariant)
-            )
+            if (!isLast) {
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(64.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant)
+                )
+            }
         }
         Spacer(modifier = Modifier.width(16.dp))
         Surface(
@@ -274,4 +292,3 @@ fun InterviewItem(
         }
     }
 }
-

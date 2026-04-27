@@ -18,15 +18,30 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.meditech.ui.components.MediTechBottomBar
 import com.example.meditech.ui.components.MediTechTopBar
 import com.example.meditech.ui.navigation.Screen
+import com.example.meditech.viewmodels.AuthViewModel
 
 @Composable
 fun HospitalDashboardScreen(navController: NavController) {
+    val authViewModel: AuthViewModel = viewModel()
+
     Scaffold(
-        topBar = { MediTechTopBar(title = "MediTech Hospital") },
+        topBar = { 
+            MediTechTopBar(
+                title = "MediTech Hospital",
+                showLogout = true,
+                onLogout = {
+                    authViewModel.logout()
+                    navController.navigate(Screen.Landing.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            ) 
+        },
         bottomBar = { MediTechBottomBar(navController, Screen.HospitalDashboard.route) }
     ) { paddingValues ->
         Column(

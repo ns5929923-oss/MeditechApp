@@ -2,10 +2,9 @@ package com.example.meditech.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -13,34 +12,42 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.meditech.ui.components.MediTechBottomBar
 import com.example.meditech.ui.components.MediTechTopBar
 import com.example.meditech.ui.navigation.Screen
+import com.example.meditech.viewmodels.AuthViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CasePortfolioScreen(navController: NavController) {
-    val filters = listOf("All Cases", "Surgical", "Diagnostic", "Research")
-
+    val authViewModel: AuthViewModel = viewModel()
+    
     Scaffold(
-        topBar = { MediTechTopBar() },
+        topBar = { 
+            MediTechTopBar(
+                title = "Case Portfolio",
+                showLogout = true,
+                onLogout = {
+                    authViewModel.logout()
+                    navController.navigate(Screen.Landing.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            ) 
+        },
         bottomBar = { MediTechBottomBar(navController, Screen.CasePortfolio.route) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White,
-                shape = androidx.compose.foundation.shape.CircleShape
+                contentColor = Color.White
             ) {
-                Icon(Icons.Default.Add, "Add New Case")
+                Icon(Icons.Default.Add, "Add Case")
             }
         }
     ) { paddingValues ->
@@ -49,169 +56,153 @@ fun CasePortfolioScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.background)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
         ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text(
-                    text = "Case Portfolio",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "Manage and review clinical documentations and patient case histories.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Text(
+                text = "Case Portfolio",
+                style = MaterialTheme.typography.headlineLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "Manage and review clinical documentations and patient case histories.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Filter Chips
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(selected = true, onClick = {}, label = { Text("All Cases") })
+                FilterChip(selected = false, onClick = {}, label = { Text("Surgical") })
+                FilterChip(selected = false, onClick = {}, label = { Text("Diagnostic") })
+                FilterChip(selected = false, onClick = {}, label = { Text("Research") })
             }
 
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                items(filters) { filter ->
-                    FilterChip(
-                        selected = filter == "All Cases",
-                        onClick = { },
-                        label = { Text(filter) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = Color.White
-                        )
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.height(24.dp))
 
-            LazyColumn(
-                contentPadding = PaddingValues(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(sampleCases) { case ->
-                    CaseCard(case)
-                }
-            }
+            CaseItem(
+                title = "Post-Operative Recovery Analysis #042",
+                description = "Comprehensive review of patient recovery metrics following minimally...",
+                status = "Active",
+                files = listOf("Report.pdf", "Scan.jpg")
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            CaseItem(
+                title = "Chronic Condition Management: Hypertension",
+                description = "Long-term study on patient BP-09's response to secondary pharmacolog...",
+                status = "Archived",
+                files = listOf("Summary.pdf")
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            CaseItem(
+                title = "Emergency Trauma Triage",
+                description = "Analysis of rapid response effectiveness during multi-vehicle collision...",
+                status = "Draft",
+                files = emptyList()
+            )
+
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
 
 @Composable
-fun CaseCard(case: MedicalCase) {
+fun CaseItem(title: String, description: String, status: String, files: List<String>) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         color = Color.White,
-        shadowElevation = 2.dp
+        shadowElevation = 1.dp
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(width = 80.dp, height = 100.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-                contentAlignment = Alignment.Center
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(case.icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
-            }
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Surface(
+                    color = when(status) {
+                        "Active" -> Color(0xFFE0F2F1)
+                        "Archived" -> Color(0xFFF5F5F5)
+                        else -> Color(0xFFFFF3E0)
+                    },
+                    shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = case.status,
+                        text = status,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier
-                            .background(case.statusColor.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
-                            .padding(horizontal = 6.dp, vertical = 2.dp),
-                        color = case.statusColor,
-                        fontWeight = FontWeight.Bold
+                        color = when(status) {
+                            "Active" -> Color(0xFF00796B)
+                            "Archived" -> Color(0xFF616161)
+                            else -> Color(0xFFE65100)
+                        }
                     )
-                    Icon(Icons.Default.MoreVert, null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
                 }
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Text(case.title, style = MaterialTheme.typography.headlineSmall, fontSize = 18.sp)
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Text(
-                    text = case.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
+                Icon(Icons.Default.MoreVert, null, tint = MaterialTheme.colorScheme.outline)
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Row(verticalAlignment = Alignment.Top) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = when(status) {
+                            "Active" -> Icons.Default.Description
+                            "Archived" -> Icons.Default.AssignmentTurnedIn
+                            else -> Icons.Default.FolderOpen
+                        },
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                    Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            
+            if (files.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    case.attachments.forEach { attachment ->
-                        AttachmentChip(attachment)
+                    files.forEach { file ->
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = if (file.endsWith(".pdf")) Icons.Default.PictureAsPdf else Icons.Default.Image,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp),
+                                    tint = MaterialTheme.colorScheme.outline
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(file, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
                     }
                 }
             }
         }
     }
 }
-
-@Composable
-fun AttachmentChip(name: String) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        shape = RoundedCornerShape(8.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            val icon = if (name.endsWith(".pdf")) Icons.Default.PictureAsPdf else Icons.Default.Image
-            Icon(icon, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-data class MedicalCase(
-    val title: String,
-    val description: String,
-    val status: String,
-    val statusColor: Color,
-    val attachments: List<String>,
-    val icon: ImageVector
-)
-
-val sampleCases = listOf(
-    MedicalCase(
-        "Post-Operative Recovery Analysis #042",
-        "Comprehensive review of patient recovery metrics following minimally invasive thoracic surgery.",
-        "Active",
-        Color(0xFF00685F),
-        listOf("Report.pdf", "Scan.jpg"),
-        Icons.Default.Description
-    ),
-    MedicalCase(
-        "Chronic Condition Management: Hypertension",
-        "Long-term study on patient BP-09's response to secondary pharmacological interventions.",
-        "Archived",
-        Color(0xFF924628),
-        listOf("Summary.pdf"),
-        Icons.Default.Assignment
-    ),
-    MedicalCase(
-        "Emergency Trauma Triage Protocol",
-        "Revised documentation for Level 1 trauma responses, focusing on rapid stabilization.",
-        "Draft",
-        Color(0xFF4648D4),
-        listOf("Flowchart.png"),
-        Icons.Default.HistoryEdu
-    )
-)

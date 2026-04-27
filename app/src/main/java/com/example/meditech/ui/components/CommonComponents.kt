@@ -54,7 +54,8 @@ fun GlassCard(
 @Composable
 fun MediTechTopBar(
     title: String = "MediTech",
-    showProfile: Boolean = true
+    showLogout: Boolean = false,
+    onLogout: () -> Unit = {}
 ) {
     Surface(
         modifier = Modifier
@@ -86,7 +87,15 @@ fun MediTechTopBar(
                 )
             }
             
-            if (showProfile) {
+            if (showLogout) {
+                IconButton(onClick = onLogout) {
+                    Icon(
+                        imageVector = Icons.Default.Logout,
+                        contentDescription = "Logout",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            } else {
                 Box(
                     modifier = Modifier
                         .size(32.dp)
