@@ -31,7 +31,7 @@ class JobAdapter(private val jobs: List<Job>) :
         holder.title.text = job.title
         holder.specialization.text = job.specialization
         holder.location.text = job.location
-        holder.salary.text = "₹${job.salary}"
+        holder.salary.text = "₹${job.salaryMin} - ₹${job.salaryMax}"
     }
 
     override fun getItemCount(): Int {

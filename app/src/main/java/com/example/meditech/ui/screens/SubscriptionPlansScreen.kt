@@ -9,7 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,12 +24,67 @@ import com.example.meditech.ui.components.MediTechBottomBar
 import com.example.meditech.ui.components.MediTechTopBar
 import com.example.meditech.ui.navigation.Screen
 
+import android.app.Activity
+import android.widget.Toast
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.meditech.viewmodels.SubscriptionViewModel
+import com.razorpay.Checkout
+import org.json.JSONObject
+
 @Composable
 fun SubscriptionPlansScreen(
     navController: NavController,
-    role: String   // ✅ role added
+    role: String
 ) {
     val isDoctor = role == "doctor"
+    val context = LocalContext.current
+    val subscriptionViewModel: SubscriptionViewModel = viewModel(context as androidx.activity.ComponentActivity)
+    val uiState by subscriptionViewModel.uiState.collectAsState()
+
+    LaunchedEffect(uiState.isPaymentSuccess) {
+        if (uiState.isPaymentSuccess) {
+            Toast.makeText(context, "Subscription Active!", Toast.LENGTH_LONG).show()
+            navController.popBackStack()
+        }
+    }
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            subscriptionViewModel.clearError()
+        }
+    }
+
+    fun startPayment(planName: String, amountInPaise: Int) {
+        val checkout = Checkout()
+        checkout.setKeyID("rzp_test_SizkViCU9X26vJ")
+        
+        try {
+            val options = JSONObject()
+            options.put("name", "MediTech")
+            options.put("description", "Subscription for $planName")
+            options.put("image", "https://s3.amazonaws.com/rzp-mobile/images/rzp.png")
+            options.put("theme.color", "#00685F")
+            options.put("currency", "INR")
+            options.put("amount", amountInPaise)
+            
+            val retryObj = JSONObject()
+            retryObj.put("enabled", true)
+            retryObj.put("max_count", 4)
+            options.put("retry", retryObj)
+
+            val prefill = JSONObject()
+            prefill.put("email", "user@example.com")
+            options.put("prefill", prefill)
+
+            checkout.open(context as Activity, options)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Error in payment: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
 
     Scaffold(
         topBar = { MediTechTopBar() },
@@ -76,10 +131,7 @@ fun SubscriptionPlansScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 🔷 ROLE BASED UI
             if (isDoctor) {
-
-                // ✅ DOCTOR PLANS
                 PlanCard(
                     name = "Basic",
                     price = "₹0",
@@ -91,10 +143,7 @@ fun SubscriptionPlansScreen(
                     ),
                     buttonText = "Continue",
                     isHighlighted = false,
-                    onClick = {
-                        // TODO: Save subscription in Firebase
-                    }
-
+                    onClick = { navController.popBackStack() }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -107,17 +156,12 @@ fun SubscriptionPlansScreen(
                         "Unlimited applications" to true,
                         "Upload portfolio" to true,
                         "Priority visibility" to true
-                    ), buttonText = "Upgrade",
+                    ),
+                    buttonText = "Upgrade",
                     isHighlighted = true,
-                    onClick = {
-                        // TODO: Save subscription in Firebase
-                    }
+                    onClick = { startPayment("Premium", 79900) }
                 )
-
             } else {
-
-
-                // ✅ HOSPITAL PLANS
                 PlanCard(
                     name = "Basic",
                     price = "₹0",
@@ -129,7 +173,7 @@ fun SubscriptionPlansScreen(
                     ),
                     buttonText = "Start",
                     isHighlighted = false,
-                    onClick = {}
+                    onClick = { navController.popBackStack() }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -145,10 +189,9 @@ fun SubscriptionPlansScreen(
                     ),
                     buttonText = "Upgrade",
                     isHighlighted = true,
-                    onClick = {}
+                    onClick = { startPayment("Premium", 299900) }
                 )
             }
-
         }
     }
 }
@@ -161,7 +204,7 @@ fun PlanCard(
     features: List<Pair<String, Boolean>>,
     buttonText: String,
     isHighlighted: Boolean,
-    onClick: () -> Unit   // ✅ comma fixed
+    onClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -266,7 +309,7 @@ fun PlanCard(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = onClick,   // ✅ FIXED
+                onClick = onClick,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = if (isHighlighted) {

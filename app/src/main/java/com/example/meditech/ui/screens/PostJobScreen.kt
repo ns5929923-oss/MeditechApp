@@ -1,4 +1,5 @@
 package com.example.meditech.ui.screens
+
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -7,17 +8,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.meditech.models.Job
+import com.example.meditech.viewmodels.HospitalViewModel
 
 @Composable
 fun PostJobScreen(navController: NavController) {
-
+    val hospitalViewModel: HospitalViewModel = viewModel()
+    val uiState by hospitalViewModel.uiState.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
-    val db = FirebaseFirestore.getInstance()
-    val auth = FirebaseAuth.getInstance()
-
 
     var title by remember { mutableStateOf("") }
     var department by remember { mutableStateOf("") }
@@ -31,48 +31,20 @@ fun PostJobScreen(navController: NavController) {
     var deadline by remember { mutableStateOf("") }
     var shift by remember { mutableStateOf("Day") }
 
-    val skills = remember { mutableStateListOf<String>() }
-    val benefits = remember { mutableStateListOf<String>() }
-
-
-    fun saveJob() {
-
-        val userId = auth.currentUser?.uid
-
-        if (userId == null) {
-            Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
-            return
+    LaunchedEffect(uiState.isJobActionSuccess) {
+        if (uiState.isJobActionSuccess) {
+            Toast.makeText(context, "Job Posted Successfully", Toast.LENGTH_SHORT).show()
+            hospitalViewModel.resetJobActionSuccess()
+            navController.popBackStack()
         }
-
-        val job = hashMapOf(
-            "title" to title,
-            "department" to department,
-            "openings" to openings,
-            "type" to jobType,
-            "description" to description,
-            "skills" to skills,
-            "experience" to experience,
-            "salaryMin" to salaryMin,
-            "salaryMax" to salaryMax,
-            "location" to location,
-            "deadline" to deadline,
-            "benefits" to benefits,
-            "shift" to shift,
-            "postedBy" to userId,
-            "timestamp" to System.currentTimeMillis()
-        )
-
-        db.collection("jobs")
-            .add(job)
-            .addOnSuccessListener {
-                Toast.makeText(context, "Job Posted Successfully", Toast.LENGTH_SHORT).show()
-                navController.popBackStack()
-            }
-            .addOnFailureListener {
-                Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
-            }
     }
 
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            hospitalViewModel.clearError()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -80,100 +52,76 @@ fun PostJobScreen(navController: NavController) {
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-
-        Text("Post a Job", style = MaterialTheme.typography.headlineMedium)
+        Text("Post a New Job", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        if (uiState.isLoading) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
         OutlinedTextField(title, { title = it }, label = { Text("Job Title") }, modifier = Modifier.fillMaxWidth())
-
         Spacer(modifier = Modifier.height(10.dp))
 
         Row {
-            OutlinedTextField(
-                department, { department = it },
-                label = { Text("Department") },
-                modifier = Modifier.weight(1f)
-            )
+            OutlinedTextField(department, { department = it }, label = { Text("Department") }, modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.width(8.dp))
-            OutlinedTextField(
-                openings, { openings = it },
-                label = { Text("Openings") },
-                modifier = Modifier.weight(1f)
-            )
+            OutlinedTextField(openings, { openings = it }, label = { Text("Openings") }, modifier = Modifier.weight(1f))
         }
-
         Spacer(modifier = Modifier.height(10.dp))
 
-        OutlinedTextField(
-            jobType, { jobType = it },
-            label = { Text("Job Type") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
+        OutlinedTextField(jobType, { jobType = it }, label = { Text("Job Type (e.g. Full-time, Part-time)") }, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(10.dp))
 
-        OutlinedTextField(
-            description, { description = it },
-            label = { Text("Description") },
-            modifier = Modifier.fillMaxWidth().height(100.dp)
-        )
-
+        OutlinedTextField(description, { description = it }, label = { Text("Job Description") }, modifier = Modifier.fillMaxWidth().height(120.dp))
         Spacer(modifier = Modifier.height(10.dp))
 
-        OutlinedTextField(
-            experience, { experience = it },
-            label = { Text("Experience") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
+        OutlinedTextField(experience, { experience = it }, label = { Text("Required Experience") }, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(10.dp))
 
         Row {
-            OutlinedTextField(
-                salaryMin, { salaryMin = it },
-                label = { Text("Min Salary") },
-                modifier = Modifier.weight(1f)
-            )
+            OutlinedTextField(salaryMin, { salaryMin = it }, label = { Text("Min Salary") }, modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.width(8.dp))
-            OutlinedTextField(
-                salaryMax, { salaryMax = it },
-                label = { Text("Max Salary") },
-                modifier = Modifier.weight(1f)
-            )
+            OutlinedTextField(salaryMax, { salaryMax = it }, label = { Text("Max Salary") }, modifier = Modifier.weight(1f))
         }
-
         Spacer(modifier = Modifier.height(10.dp))
 
-        OutlinedTextField(
-            location, { location = it },
-            label = { Text("Location") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
+        OutlinedTextField(location, { location = it }, label = { Text("Location") }, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(10.dp))
 
-        OutlinedTextField(
-            deadline, { deadline = it },
-            label = { Text("Deadline") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
+        OutlinedTextField(deadline, { deadline = it }, label = { Text("Application Deadline") }, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(10.dp))
 
-        OutlinedTextField(
-            shift, { shift = it },
-            label = { Text("Shift (Day/Night)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
+        OutlinedTextField(shift, { shift = it }, label = { Text("Shift (Day/Night)") }, modifier = Modifier.fillMaxWidth())
+        Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = { saveJob() },
-            modifier = Modifier.fillMaxWidth()
+            onClick = {
+                if (title.isBlank() || department.isBlank() || location.isBlank()) {
+                    Toast.makeText(context, "Please fill required fields", Toast.LENGTH_SHORT).show()
+                } else {
+                    hospitalViewModel.postJob(
+                        Job(
+                            title = title,
+                            department = department,
+                            openings = openings,
+                            jobType = jobType,
+                            description = description,
+                            experience = experience,
+                            salaryMin = salaryMin,
+                            salaryMax = salaryMax,
+                            location = location,
+                            deadline = deadline,
+                            shift = shift
+                        )
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !uiState.isLoading
         ) {
-            Text("Post Job")
+            Text("POST JOB NOW")
         }
 
         Spacer(modifier = Modifier.height(40.dp))

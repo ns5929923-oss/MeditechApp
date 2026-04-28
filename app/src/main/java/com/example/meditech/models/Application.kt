@@ -1,11 +1,13 @@
 package com.example.meditech.models
 
 data class Application(
-
-    val id: Int,
-    val doctor_id: Int,
-    val job_id: Int,
-    val status: String,
-    val applied_date: String
-
+    val id: String = "",
+    val doctorId: String = "",
+    val doctorName: String = "",
+    val hospitalId: String = "",
+    val jobId: String = "",
+    val jobTitle: String = "",
+    val cvUrl: String = "",
+    val status: String = "Pending", // Pending, Shortlisted, Rejected, Accepted
+    val appliedAt: Long = 0L
 )

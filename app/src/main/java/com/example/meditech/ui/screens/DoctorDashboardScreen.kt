@@ -1,5 +1,10 @@
 package com.example.meditech.ui.screens
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -7,13 +12,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,11 +29,30 @@ import com.example.meditech.ui.components.MediTechBottomBar
 import com.example.meditech.ui.components.MediTechTopBar
 import com.example.meditech.ui.navigation.Screen
 import com.example.meditech.viewmodels.AuthViewModel
+import com.example.meditech.viewmodels.DoctorViewModel
 
 @Composable
 fun DoctorDashboardScreen(navController: NavController) {
     val authViewModel: AuthViewModel = viewModel()
-    
+    val doctorViewModel: DoctorViewModel = viewModel()
+    val uiState by doctorViewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            doctorViewModel.uploadCv(it, "CV_${System.currentTimeMillis()}.pdf")
+        }
+    }
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            doctorViewModel.clearError()
+        }
+    }
+
     Scaffold(
         topBar = { 
             MediTechTopBar(
@@ -42,6 +67,12 @@ fun DoctorDashboardScreen(navController: NavController) {
         },
         bottomBar = { MediTechBottomBar(navController, Screen.DoctorDashboard.route) }
     ) { paddingValues ->
+        if (uiState.isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -52,7 +83,7 @@ fun DoctorDashboardScreen(navController: NavController) {
         ) {
             // Welcome Section
             Text(
-                text = "Welcome Back,",
+                text = "Welcome Back, ${uiState.doctor?.name ?: ""}",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -68,7 +99,7 @@ fun DoctorDashboardScreen(navController: NavController) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 StatsCard(
                     title = "Available Jobs",
-                    value = "12",
+                    value = uiState.jobs.size.toString(),
                     icon = Icons.Default.Work,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
@@ -76,7 +107,7 @@ fun DoctorDashboardScreen(navController: NavController) {
                 Spacer(modifier = Modifier.width(12.dp))
                 StatsCard(
                     title = "Applications",
-                    value = "08",
+                    value = uiState.applications.size.toString(),
                     icon = Icons.Default.Description,
                     color = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.weight(1f)
@@ -93,8 +124,8 @@ fun DoctorDashboardScreen(navController: NavController) {
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 StatsCard(
-                    title = "Portfolio",
-                    value = "94%",
+                    title = "Profile Match",
+                    value = if (uiState.doctor?.cvUrl != null) "94%" else "20%",
                     icon = Icons.Default.ContactPage,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
@@ -103,7 +134,7 @@ fun DoctorDashboardScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Portfolio CTA
+            // CV / Portfolio CTA
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -120,22 +151,47 @@ fun DoctorDashboardScreen(navController: NavController) {
             ) {
                 Column {
                     Text(
-                        text = "Complete Your Profile",
+                        text = if (uiState.doctor?.cvUrl != null) "Manage Your CV" else "Complete Your Profile",
                         style = MaterialTheme.typography.headlineMedium,
                         color = Color.White
                     )
                     Text(
-                        text = "Adding your surgical certifications increases visibility by 40%.",
+                        text = if (uiState.doctor?.cvUrl != null) 
+                            "CV: ${uiState.doctor?.cvFileName ?: "Uploaded"}"
+                            else "Adding your surgical certifications increases visibility by 40%.",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.9f)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = { navController.navigate(Screen.CasePortfolio.route) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("UPDATE PORTFOLIO", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    
+                    Row {
+                        if (uiState.doctor?.cvUrl != null) {
+                            Button(
+                                onClick = { 
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uiState.doctor?.cvUrl))
+                                    context.startActivity(intent)
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("VIEW CV", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            IconButton(onClick = { doctorViewModel.deleteCv() }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.White)
+                            }
+                            IconButton(onClick = { launcher.launch("application/pdf") }) {
+                                Icon(Icons.Default.Edit, contentDescription = "Replace", tint = Color.White)
+                            }
+                        } else {
+                            Button(
+                                onClick = { launcher.launch("application/pdf") },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("UPLOAD CV (PDF)", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
                 }
             }
@@ -182,7 +238,7 @@ fun DoctorDashboardScreen(navController: NavController) {
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.primary
                             )
-                            Text("Basic", style = MaterialTheme.typography.headlineSmall)
+                            Text(uiState.doctor?.subscriptionStatus?.uppercase() ?: "BASIC", style = MaterialTheme.typography.headlineSmall)
                         }
                     }
 
@@ -195,35 +251,69 @@ fun DoctorDashboardScreen(navController: NavController) {
             }
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Interviews
+            // Recent Applications
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Interviews", style = MaterialTheme.typography.headlineMedium)
+                Text("Your Applications", style = MaterialTheme.typography.headlineMedium)
                 Text("VIEW ALL", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            InterviewItem(
-                time = "TODAY • 14:30",
-                hospital = "St. Jude Medical Center",
-                position = "Chief Surgeon Interview",
-                isActive = true,
-                isLast = false
-            )
-            
-            InterviewItem(
-                time = "TOMORROW • 10:00",
-                hospital = "City General Hospital",
-                position = "Cardiology Department Screening",
-                isActive = false,
-                isLast = true
-            )
+            if (uiState.applications.isEmpty()) {
+                Text("No applications yet. Start applying for jobs!", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                uiState.applications.take(3).forEach { application ->
+                    ApplicationItem(application)
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+fun ApplicationItem(application: com.example.meditech.models.Application) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = Color.White,
+        shadowElevation = 1.dp
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(application.jobTitle, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                Surface(
+                    color = when(application.status) {
+                        "Accepted" -> Color(0xFFE8F5E9)
+                        "Rejected" -> Color(0xFFFFEBEE)
+                        "Shortlisted" -> Color(0xFFE3F2FD)
+                        else -> Color(0xFFF5F5F5)
+                    },
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        application.status,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = when(application.status) {
+                            "Accepted" -> Color(0xFF2E7D32)
+                            "Rejected" -> Color(0xFFC62828)
+                            "Shortlisted" -> Color(0xFF1565C0)
+                            else -> Color(0xFF757575)
+                        }
+                    )
+                }
+            }
+            Text("Applied on: ${java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(application.appliedAt))}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -247,48 +337,6 @@ fun StatsCard(
             Spacer(modifier = Modifier.height(8.dp))
             Text(value, style = MaterialTheme.typography.displayLarge, color = color, fontSize = 32.sp)
             Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-fun InterviewItem(
-    time: String,
-    hospital: String,
-    position: String,
-    isActive: Boolean,
-    isLast: Boolean
-) {
-    Row(modifier = Modifier.fillMaxWidth()) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(
-                modifier = Modifier
-                    .size(16.dp)
-                    .background(if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, CircleShape)
-                    .border(2.dp, Color.White, CircleShape)
-            )
-            if (!isLast) {
-                Box(
-                    modifier = Modifier
-                        .width(1.dp)
-                        .height(64.dp)
-                        .background(MaterialTheme.colorScheme.outlineVariant)
-                )
-            }
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            color = if (isActive) Color.White else Color.White.copy(alpha = 0.5f),
-            shadowElevation = if (isActive) 1.dp else 0.dp,
-            border = if (isActive) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-        ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(time, style = MaterialTheme.typography.labelLarge, color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(hospital, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                Text(position, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
         }
     }
 }

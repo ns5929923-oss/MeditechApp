@@ -17,7 +17,14 @@ import com.example.meditech.ui.screens.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
-class MainActivity : ComponentActivity() {
+import android.widget.Toast
+import androidx.activity.viewModels
+import com.example.meditech.viewmodels.SubscriptionViewModel
+import com.razorpay.PaymentResultListener
+
+class MainActivity : ComponentActivity(), PaymentResultListener {
+    private val subscriptionViewModel: SubscriptionViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
@@ -38,10 +45,11 @@ class MainActivity : ComponentActivity() {
                                 .document(currentUser.uid).get()
                                 .addOnSuccessListener { document ->
                                     val role = document.getString("role")
-                                    startDestination = if (role == "doctor") {
-                                        Screen.DoctorDashboard.route
-                                    } else {
-                                        Screen.HospitalDashboard.route
+                                    startDestination = when (role) {
+                                        "doctor" -> Screen.DoctorDashboard.route
+                                        "hospital" -> Screen.HospitalDashboard.route
+                                        "admin" -> Screen.AdminPanel.route
+                                        else -> Screen.Landing.route
                                     }
                                 }
                                 .addOnFailureListener {
@@ -70,14 +78,14 @@ class MainActivity : ComponentActivity() {
                                 val role = backStackEntry.arguments?.getString("role") ?: "doctor"
                                 SubscriptionPlansScreen(navController = navController, role = role)
                             }
-                            composable("roleSelection") {
+                            composable(Screen.RoleSelection.route) {
                                 RoleSelectionScreen(navController)
                             }
                             composable("login/{role}") { backStackEntry ->
                                 val role = backStackEntry.arguments?.getString("role") ?: "doctor"
                                 LoginScreen(navController, role)
                             }
-                            composable("postJob") {
+                            composable(Screen.PostJob.route) {
                                 PostJobScreen(navController)
                             }
                         }
@@ -85,5 +93,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onPaymentSuccess(razorpayPaymentId: String?) {
+        Toast.makeText(this, "Payment Successful", Toast.LENGTH_SHORT).show()
+        // We will pass the success to the ViewModel. 
+        // Note: Real apps should verify on backend.
+        subscriptionViewModel.onPaymentSuccess(razorpayPaymentId ?: "", "Premium", "Check Subscription")
+    }
+
+    override fun onPaymentError(code: Int, response: String?) {
+        Toast.makeText(this, "Payment Failed: $response", Toast.LENGTH_SHORT).show()
+        subscriptionViewModel.onPaymentError(response ?: "Unknown Error")
     }
 }

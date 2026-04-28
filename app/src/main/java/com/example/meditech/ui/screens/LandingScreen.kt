@@ -100,7 +100,7 @@ fun LandingScreen(navController: NavController) {
                 description = "Manage platform operations and system analytics.",
                 icon = Icons.Default.AdminPanelSettings,
                 color = MaterialTheme.colorScheme.tertiary,
-                onClick = { navController.navigate(Screen.Login.route) }
+                onClick = { navController.navigate(Screen.AdminPanel.route) }
             )
             
             Spacer(modifier = Modifier.height(48.dp))

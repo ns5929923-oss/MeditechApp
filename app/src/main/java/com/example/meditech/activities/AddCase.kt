@@ -11,8 +11,8 @@ import com.example.meditech.models.Application
 class AddCase : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
-    private lateinit var caseAdapter: ApplicationAdapter   // ✅ change type
-    private var applicationList: MutableList<Application> = mutableListOf()  // ✅ add this
+    private lateinit var caseAdapter: ApplicationAdapter
+    private var applicationList: MutableList<Application> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,16 +22,14 @@ class AddCase : AppCompatActivity() {
 
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        // ✅ Demo data (same as your style)
         applicationList.add(
-            Application(1, 1, 5, "Pending", "2026-03-12")
+            Application(id = "1", doctorId = "1", jobId = "5", jobTitle = "General Surgeon", status = "Pending", appliedAt = System.currentTimeMillis())
         )
 
         applicationList.add(
-            Application(2, 1, 8, "Shortlisted", "2026-03-10")
+            Application(id = "2", doctorId = "1", jobId = "8", jobTitle = "Cardiologist", status = "Shortlisted", appliedAt = System.currentTimeMillis())
         )
 
-        // ✅ Adapter
         caseAdapter = ApplicationAdapter(applicationList)
         recyclerView.adapter = caseAdapter
     }

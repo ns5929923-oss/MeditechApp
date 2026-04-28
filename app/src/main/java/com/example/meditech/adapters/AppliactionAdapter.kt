@@ -31,9 +31,9 @@ class ApplicationAdapter(private val applicationList: List<Application>) :
 
         val app = applicationList[position]
 
-        holder.jobId.text = "Job ID: ${app.job_id}"
+        holder.jobId.text = "Job: ${app.jobTitle}"
         holder.status.text = "Status: ${app.status}"
-        holder.date.text = "Applied: ${app.applied_date}"
+        holder.date.text = "Applied: ${app.appliedAt}"
     }
 
     override fun getItemCount(): Int {

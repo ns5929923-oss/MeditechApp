@@ -63,10 +63,11 @@ fun AuthScreen(navController: NavController, isLoginInitial: Boolean) {
             viewModel.clearError()
         }
         if (authState.isSuccess) {
-            val targetRoute = if (authState.userRole == "doctor") {
-                Screen.DoctorDashboard.route
-            } else {
-                Screen.HospitalDashboard.route
+            val targetRoute = when (authState.userRole) {
+                "doctor" -> Screen.DoctorDashboard.route
+                "hospital" -> Screen.HospitalDashboard.route
+                "admin" -> Screen.AdminPanel.route
+                else -> Screen.Landing.route
             }
             navController.navigate(targetRoute) {
                 popUpTo(Screen.Landing.route) { inclusive = true }
