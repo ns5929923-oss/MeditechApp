@@ -77,6 +77,9 @@ class MainActivity : ComponentActivity() {
                                 val role = backStackEntry.arguments?.getString("role") ?: "doctor"
                                 LoginScreen(navController, role)
                             }
+                            composable("postJob") {
+                                PostJobScreen(navController)
+                            }
                         }
                     }
                 }
