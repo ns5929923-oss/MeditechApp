@@ -69,7 +69,7 @@ fun AdminPanelScreen(navController: NavController) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 StatsCard(
                     title = "Active Jobs",
-                    value = "450",
+                    value = "100",
                     icon = Icons.Default.Work,
                     color = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.weight(1f)
@@ -77,7 +77,7 @@ fun AdminPanelScreen(navController: NavController) {
                 Spacer(modifier = Modifier.width(12.dp))
                 StatsCard(
                     title = "Revenue",
-                    value = "$12k",
+                    value = "₹12k",
                     icon = Icons.Default.MonetizationOn,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)

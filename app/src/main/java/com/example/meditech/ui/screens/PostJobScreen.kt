@@ -18,7 +18,7 @@ fun PostJobScreen(navController: NavController) {
     val db = FirebaseFirestore.getInstance()
     val auth = FirebaseAuth.getInstance()
 
-    // 🔷 STATES
+
     var title by remember { mutableStateOf("") }
     var department by remember { mutableStateOf("") }
     var openings by remember { mutableStateOf("") }
@@ -34,7 +34,7 @@ fun PostJobScreen(navController: NavController) {
     val skills = remember { mutableStateListOf<String>() }
     val benefits = remember { mutableStateListOf<String>() }
 
-    // 🔷 SAVE FUNCTION
+
     fun saveJob() {
 
         val userId = auth.currentUser?.uid
@@ -73,7 +73,7 @@ fun PostJobScreen(navController: NavController) {
             }
     }
 
-    // 🔷 UI
+
     Column(
         modifier = Modifier
             .fillMaxSize()
