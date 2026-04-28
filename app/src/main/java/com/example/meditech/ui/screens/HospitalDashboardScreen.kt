@@ -53,7 +53,7 @@ fun HospitalDashboardScreen(navController: NavController) {
                 .padding(16.dp)
         ) {
             Text(
-                text = "City General Hospital",
+                text = "Welcome!",
                 style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.primary
             )
