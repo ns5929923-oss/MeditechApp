@@ -50,7 +50,7 @@ fun AuthScreen(navController: NavController, isLoginInitial: Boolean) {
     val context = LocalContext.current
 
     var isLogin by remember { mutableStateOf(isLoginInitial) }
-    var isProfessional by remember { mutableStateOf(true) }
+    var userRoleState by remember { mutableStateOf("doctor") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
@@ -133,16 +133,22 @@ fun AuthScreen(navController: NavController, isLoginInitial: Boolean) {
                     .padding(4.dp)
             ) {
                 UserTypeButton(
-                    text = "Medical Professional",
-                    isSelected = isProfessional,
+                    text = "Doctor",
+                    isSelected = userRoleState == "doctor",
                     modifier = Modifier.weight(1f),
-                    onClick = { isProfessional = true }
+                    onClick = { userRoleState = "doctor" }
                 )
                 UserTypeButton(
-                    text = "Health Facility",
-                    isSelected = !isProfessional,
+                    text = "Hospital",
+                    isSelected = userRoleState == "hospital",
                     modifier = Modifier.weight(1f),
-                    onClick = { isProfessional = false }
+                    onClick = { userRoleState = "hospital" }
+                )
+                UserTypeButton(
+                    text = "Admin",
+                    isSelected = userRoleState == "admin",
+                    modifier = Modifier.weight(1f),
+                    onClick = { userRoleState = "admin" }
                 )
             }
 
@@ -219,8 +225,7 @@ fun AuthScreen(navController: NavController, isLoginInitial: Boolean) {
                     if (isLogin) {
                         viewModel.login(email, password)
                     } else {
-                        val role = if (isProfessional) "doctor" else "hospital"
-                        viewModel.register(email, name, password, role)
+                        viewModel.register(email, name, password, userRoleState)
                     }
                 },
                 enabled = !authState.isLoading,

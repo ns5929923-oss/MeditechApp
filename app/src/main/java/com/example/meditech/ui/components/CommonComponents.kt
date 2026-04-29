@@ -55,7 +55,8 @@ fun GlassCard(
 fun MediTechTopBar(
     title: String = "MediTech",
     showLogout: Boolean = false,
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onMenuClick: (() -> Unit)? = null
 ) {
     Surface(
         modifier = Modifier
@@ -72,6 +73,12 @@ fun MediTechTopBar(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (onMenuClick != null) {
+                    IconButton(onClick = onMenuClick) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
                 Icon(
                     imageVector = Icons.Default.MedicalServices,
                     contentDescription = null,
@@ -110,19 +117,27 @@ fun MediTechTopBar(
 @Composable
 fun MediTechBottomBar(
     navController: NavController,
-    currentRoute: String?
+    currentRoute: String?,
+    userRole: String = "doctor"
 ) {
+    // Hide completely for Admin
+    if (userRole == "admin") return
+
     NavigationBar(
         containerColor = Color.White.copy(alpha = 0.8f),
         tonalElevation = 0.dp,
         modifier = Modifier.height(80.dp)
     ) {
-        val items = listOf(
-            NavigationItem("Dashboard", Screen.DoctorDashboard.route, Icons.Default.Dashboard),
-            NavigationItem("Jobs", Screen.JobListings.route, Icons.Default.Work),
-            NavigationItem("Portfolio", Screen.CasePortfolio.route, Icons.Default.AccountBox),
-            NavigationItem("Settings", "settings", Icons.Default.Settings)
+        val items = mutableListOf(
+            NavigationItem("Dashboard", if(userRole == "hospital") Screen.HospitalDashboard.route else Screen.DoctorDashboard.route, Icons.Default.Dashboard),
+            NavigationItem("Jobs", Screen.JobListings.route, Icons.Default.Work)
         )
+        
+        // Conditional Items
+        if (userRole == "doctor") {
+            items.add(NavigationItem("Portfolio", Screen.CasePortfolio.route, Icons.Default.AccountBox))
+            items.add(NavigationItem("Settings", "settings", Icons.Default.Settings))
+        }
         
         items.forEach { item ->
             val isSelected = currentRoute == item.route

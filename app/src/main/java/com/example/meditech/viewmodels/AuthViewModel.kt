@@ -72,7 +72,7 @@ class AuthViewModel : ViewModel() {
 
                 val document = firestore.collection("users").document(uid).get().await()
                 val role = document.getString("role") ?: "doctor"
-                Log.d("MediTechAuth", "Fetched role: $role")
+                android.util.Log.d("MediTechAuth", "Fetched role from Firestore: $role for UID: $uid")
 
                 _authState.value = AuthState(isSuccess = true, userRole = role)
             } catch (e: Exception) {

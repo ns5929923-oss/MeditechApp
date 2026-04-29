@@ -59,7 +59,7 @@ fun HospitalDashboardScreen(navController: NavController) {
                 }
             ) 
         },
-        bottomBar = { MediTechBottomBar(navController, Screen.HospitalDashboard.route) }
+        bottomBar = { MediTechBottomBar(navController, Screen.HospitalDashboard.route, "hospital") }
     ) { paddingValues ->
         if (uiState.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
