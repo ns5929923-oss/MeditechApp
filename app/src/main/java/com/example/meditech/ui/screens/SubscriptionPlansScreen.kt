@@ -88,7 +88,7 @@ fun SubscriptionPlansScreen(
 
     Scaffold(
         topBar = { MediTechTopBar() },
-        bottomBar = { MediTechBottomBar(navController, "settings") }
+        bottomBar = { MediTechBottomBar(navController, "subscription/$role", role) }
     ) { paddingValues ->
         Column(
             modifier = Modifier

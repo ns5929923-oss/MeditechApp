@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.meditech.limits.SubscriptionLimits
 import com.example.meditech.ui.components.MediTechBottomBar
 import com.example.meditech.ui.components.MediTechTopBar
 import com.example.meditech.ui.navigation.Screen
@@ -37,12 +38,20 @@ fun DoctorDashboardScreen(navController: NavController) {
     val doctorViewModel: DoctorViewModel = viewModel()
     val uiState by doctorViewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val hasSubscription = SubscriptionLimits.hasActiveSubscription(uiState.doctor?.subscriptionStatus)
+    val hasReachedPdfLimit = !hasSubscription &&
+        uiState.pdfUploadCount >= SubscriptionLimits.FREE_DOCTOR_PDF_LIMIT
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            doctorViewModel.uploadCv(it, "CV_${System.currentTimeMillis()}.pdf")
+            if (hasReachedPdfLimit) {
+                Toast.makeText(context, SubscriptionLimits.doctorPdfLimitMessage(), Toast.LENGTH_LONG).show()
+                navController.navigate("subscription/doctor")
+            } else {
+                doctorViewModel.uploadCv(it, "CV_${System.currentTimeMillis()}.pdf")
+            }
         }
     }
 
@@ -180,16 +189,35 @@ fun DoctorDashboardScreen(navController: NavController) {
                             IconButton(onClick = { doctorViewModel.deleteCv() }) {
                                 Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.White)
                             }
-                            IconButton(onClick = { launcher.launch("application/pdf") }) {
+                            IconButton(onClick = {
+                                if (hasReachedPdfLimit) {
+                                    Toast.makeText(context, SubscriptionLimits.doctorPdfLimitMessage(), Toast.LENGTH_LONG).show()
+                                    navController.navigate("subscription/doctor")
+                                } else {
+                                    launcher.launch("application/pdf")
+                                }
+                            }) {
                                 Icon(Icons.Default.Edit, contentDescription = "Replace", tint = Color.White)
                             }
                         } else {
                             Button(
-                                onClick = { launcher.launch("application/pdf") },
+                                onClick = {
+                                    if (hasReachedPdfLimit) {
+                                        Toast.makeText(context, SubscriptionLimits.doctorPdfLimitMessage(), Toast.LENGTH_LONG).show()
+                                        navController.navigate("subscription/doctor")
+                                    } else {
+                                        launcher.launch("application/pdf")
+                                    }
+                                },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text("UPLOAD CV (PDF)", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text(
+                                    if (hasReachedPdfLimit) "UPGRADE TO UPLOAD" else "UPLOAD CV (PDF)",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
                     }

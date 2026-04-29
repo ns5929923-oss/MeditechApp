@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.meditech.ui.components.MediTechTopBar
+import com.example.meditech.ui.navigation.RoleNavigation
 import com.example.meditech.ui.navigation.Screen
 import com.example.meditech.viewmodels.AuthViewModel
 import kotlinx.coroutines.launch
@@ -28,6 +29,7 @@ fun AdminPanelScreen(navController: NavController) {
     val authViewModel: AuthViewModel = viewModel()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val navigationItems = RoleNavigation.itemsFor("admin")
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -46,34 +48,15 @@ fun AdminPanelScreen(navController: NavController) {
                 )
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
                 
-                NavigationDrawerItem(
-                    label = { Text("Dashboard") },
-                    selected = true,
-                    onClick = { scope.launch { drawerState.close() } },
-                    icon = { Icon(Icons.Default.Dashboard, null) },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
-                NavigationDrawerItem(
-                    label = { Text("User Management") },
-                    selected = false,
-                    onClick = { scope.launch { drawerState.close() } },
-                    icon = { Icon(Icons.Default.People, null) },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
-                NavigationDrawerItem(
-                    label = { Text("Hospitals") },
-                    selected = false,
-                    onClick = { scope.launch { drawerState.close() } },
-                    icon = { Icon(Icons.Default.Domain, null) },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
-                NavigationDrawerItem(
-                    label = { Text("Job Reports") },
-                    selected = false,
-                    onClick = { scope.launch { drawerState.close() } },
-                    icon = { Icon(Icons.Default.Report, null) },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
+                navigationItems.forEachIndexed { index, item ->
+                    NavigationDrawerItem(
+                        label = { Text(item.title) },
+                        selected = index == 0,
+                        onClick = { scope.launch { drawerState.close() } },
+                        icon = { Icon(item.icon, null) },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+                }
                 
                 Spacer(modifier = Modifier.weight(1f))
                 

@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.meditech.limits.SubscriptionLimits
 import com.example.meditech.models.Job
 import com.example.meditech.viewmodels.HospitalViewModel
 
@@ -30,6 +31,9 @@ fun PostJobScreen(navController: NavController) {
     var location by remember { mutableStateOf("") }
     var deadline by remember { mutableStateOf("") }
     var shift by remember { mutableStateOf("Day") }
+    val hasSubscription = SubscriptionLimits.hasActiveSubscription(uiState.hospital?.subscriptionStatus)
+    val hasReachedFreeLimit = !hasSubscription &&
+        uiState.postedJobCount >= SubscriptionLimits.FREE_HOSPITAL_JOB_LIMIT
 
     LaunchedEffect(uiState.isJobActionSuccess) {
         if (uiState.isJobActionSuccess) {
@@ -59,6 +63,22 @@ fun PostJobScreen(navController: NavController) {
         if (uiState.isLoading) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        if (hasReachedFreeLimit) {
+            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = SubscriptionLimits.hospitalJobLimitMessage(),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(onClick = { navController.navigate("subscription/hospital") }) {
+                        Text("Upgrade Subscription")
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
         OutlinedTextField(title, { title = it }, label = { Text("Job Title") }, modifier = Modifier.fillMaxWidth())
@@ -100,6 +120,9 @@ fun PostJobScreen(navController: NavController) {
             onClick = {
                 if (title.isBlank() || department.isBlank() || location.isBlank()) {
                     Toast.makeText(context, "Please fill required fields", Toast.LENGTH_SHORT).show()
+                } else if (hasReachedFreeLimit) {
+                    Toast.makeText(context, SubscriptionLimits.hospitalJobLimitMessage(), Toast.LENGTH_LONG).show()
+                    navController.navigate("subscription/hospital")
                 } else {
                     hospitalViewModel.postJob(
                         Job(
@@ -119,7 +142,7 @@ fun PostJobScreen(navController: NavController) {
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !uiState.isLoading
+            enabled = !uiState.isLoading && !hasReachedFreeLimit
         ) {
             Text("POST JOB NOW")
         }

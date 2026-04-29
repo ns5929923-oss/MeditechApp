@@ -3,11 +3,13 @@ package com.example.meditech.viewmodels
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.meditech.limits.SubscriptionLimits
 import com.example.meditech.models.Application
 import com.example.meditech.models.Doctor
 import com.example.meditech.models.Job
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +22,7 @@ data class DoctorUiState(
     val jobs: List<Job> = emptyList(),
     val filteredJobs: List<Job> = emptyList(),
     val applications: List<Application> = emptyList(),
+    val pdfUploadCount: Int = 0,
     val error: String? = null,
     val uploadProgress: Float = 0f,
     val isApplySuccess: Boolean = false
@@ -45,7 +48,12 @@ class DoctorViewModel : ViewModel() {
             try {
                 val doc = firestore.collection("users").document(uid).get().await()
                 val doctor = doc.toObject(Doctor::class.java)
-                _uiState.value = _uiState.value.copy(doctor = doctor)
+                val uploadCount = firestore.collection("cvUploads")
+                    .whereEqualTo("doctorId", uid)
+                    .get()
+                    .await()
+                    .size()
+                _uiState.value = _uiState.value.copy(doctor = doctor, pdfUploadCount = uploadCount)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)
             }
@@ -92,21 +100,84 @@ class DoctorViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
+                val userRef = firestore.collection("users").document(uid)
+                val counterRef = firestore.collection("usageLimits").document(uid)
+                val uploadRef = firestore.collection("cvUploads").document()
+                val existingUploadCount = firestore.collection("cvUploads")
+                    .whereEqualTo("doctorId", uid)
+                    .get()
+                    .await()
+                    .size()
+                val currentDoctor = _uiState.value.doctor
+                val currentStatus = currentDoctor?.subscriptionStatus
+
+                if (!SubscriptionLimits.hasActiveSubscription(currentStatus) &&
+                    existingUploadCount >= SubscriptionLimits.FREE_DOCTOR_PDF_LIMIT
+                ) {
+                    throw IllegalStateException(SubscriptionLimits.doctorPdfLimitMessage())
+                }
+
                 ref.putFile(uri).await()
                 val url = ref.downloadUrl.await().toString()
-                
-                firestore.collection("users").document(uid).update(
-                    mapOf(
-                        "cvUrl" to url,
-                        "cvFileName" to fileName,
-                        "cvUploadedAt" to System.currentTimeMillis()
+
+                try {
+                    firestore.runTransaction { transaction ->
+                        val userSnapshot = transaction.get(userRef)
+                        val subscriptionStatus = userSnapshot.getString("subscriptionStatus") ?: currentStatus
+                        val hasSubscription = SubscriptionLimits.hasActiveSubscription(subscriptionStatus)
+
+                        if (!hasSubscription) {
+                            val counterSnapshot = transaction.get(counterRef)
+                            val storedCount = counterSnapshot.getLong("doctorPdfUploads")?.toInt() ?: 0
+                            val currentCount = maxOf(storedCount, existingUploadCount)
+
+                            if (currentCount >= SubscriptionLimits.FREE_DOCTOR_PDF_LIMIT) {
+                                throw IllegalStateException(SubscriptionLimits.doctorPdfLimitMessage())
+                            }
+
+                            transaction.set(
+                                counterRef,
+                                mapOf(
+                                    "userId" to uid,
+                                    "doctorPdfUploads" to currentCount + 1,
+                                    "updatedAt" to System.currentTimeMillis()
+                                ),
+                                SetOptions.merge()
+                            )
+                        }
+
+                        transaction.set(
+                            uploadRef,
+                            mapOf(
+                                "id" to uploadRef.id,
+                                "doctorId" to uid,
+                                "fileName" to fileName,
+                                "url" to url,
+                                "uploadedAt" to System.currentTimeMillis()
+                            )
+                        )
+                        transaction.update(
+                            userRef,
+                            mapOf(
+                                "cvUrl" to url,
+                                "cvFileName" to fileName,
+                                "cvUploadedAt" to System.currentTimeMillis()
+                            )
+                        )
+                        null
+                    }.await()
+                } catch (e: Exception) {
+                    runCatching { ref.delete().await() }
+                    throw e
+                }
+
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    pdfUploadCount = existingUploadCount + 1
                     )
-                ).await()
-                
                 fetchDoctorProfile()
-                _uiState.value = _uiState.value.copy(isLoading = false)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
+                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Unable to upload PDF")
             }
         }
     }

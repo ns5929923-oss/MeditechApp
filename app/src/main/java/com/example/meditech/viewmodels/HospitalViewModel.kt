@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.meditech.models.Application
 import com.example.meditech.models.Hospital
 import com.example.meditech.models.Job
+import com.example.meditech.limits.SubscriptionLimits
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -17,6 +19,7 @@ data class HospitalUiState(
     val hospital: Hospital? = null,
     val myJobs: List<Job> = emptyList(),
     val applications: List<Application> = emptyList(),
+    val postedJobCount: Int = 0,
     val error: String? = null,
     val isJobActionSuccess: Boolean = false
 )
@@ -56,7 +59,11 @@ class HospitalViewModel : ViewModel() {
                     .whereEqualTo("hospitalId", uid)
                     .get().await()
                 val jobs = snapshot.toObjects(Job::class.java)
-                _uiState.value = _uiState.value.copy(isLoading = false, myJobs = jobs)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    myJobs = jobs,
+                    postedJobCount = jobs.size
+                )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
             }
@@ -84,13 +91,51 @@ class HospitalViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, isJobActionSuccess = false)
             try {
+                val userRef = firestore.collection("users").document(uid)
+                val counterRef = firestore.collection("usageLimits").document(uid)
                 val ref = firestore.collection("jobs").document()
                 val newJob = job.copy(id = ref.id, hospitalId = uid, hospitalName = hospitalName, timestamp = System.currentTimeMillis())
-                ref.set(newJob).await()
+
+                val existingJobCount = firestore.collection("jobs")
+                    .whereEqualTo("hospitalId", uid)
+                    .get()
+                    .await()
+                    .size()
+
+                firestore.runTransaction { transaction ->
+                    val userSnapshot = transaction.get(userRef)
+                    val subscriptionStatus = userSnapshot.getString("subscriptionStatus")
+                        ?: _uiState.value.hospital?.subscriptionStatus
+                    val hasSubscription = SubscriptionLimits.hasActiveSubscription(subscriptionStatus)
+
+                    if (!hasSubscription) {
+                        val counterSnapshot = transaction.get(counterRef)
+                        val storedCount = counterSnapshot.getLong("hospitalJobsPosted")?.toInt() ?: 0
+                        val currentCount = maxOf(storedCount, existingJobCount)
+
+                        if (currentCount >= SubscriptionLimits.FREE_HOSPITAL_JOB_LIMIT) {
+                            throw IllegalStateException(SubscriptionLimits.hospitalJobLimitMessage())
+                        }
+
+                        transaction.set(
+                            counterRef,
+                            mapOf(
+                                "userId" to uid,
+                                "hospitalJobsPosted" to currentCount + 1,
+                                "updatedAt" to System.currentTimeMillis()
+                            ),
+                            SetOptions.merge()
+                        )
+                    }
+
+                    transaction.set(ref, newJob)
+                    null
+                }.await()
+
                 _uiState.value = _uiState.value.copy(isLoading = false, isJobActionSuccess = true)
                 fetchMyJobs()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
+                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Unable to post job")
             }
         }
     }

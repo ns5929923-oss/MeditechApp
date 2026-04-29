@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.meditech.ui.navigation.RoleNavigation
 import com.example.meditech.ui.navigation.Screen
 
 @Composable
@@ -128,23 +129,14 @@ fun MediTechBottomBar(
         tonalElevation = 0.dp,
         modifier = Modifier.height(80.dp)
     ) {
-        val items = mutableListOf(
-            NavigationItem("Dashboard", if(userRole == "hospital") Screen.HospitalDashboard.route else Screen.DoctorDashboard.route, Icons.Default.Dashboard),
-            NavigationItem("Jobs", Screen.JobListings.route, Icons.Default.Work)
-        )
-        
-        // Conditional Items
-        if (userRole == "doctor") {
-            items.add(NavigationItem("Portfolio", Screen.CasePortfolio.route, Icons.Default.AccountBox))
-            items.add(NavigationItem("Settings", "settings", Icons.Default.Settings))
-        }
-        
+        val items = RoleNavigation.itemsFor(userRole)
+
         items.forEach { item ->
             val isSelected = currentRoute == item.route
             NavigationBarItem(
                 selected = isSelected,
                 onClick = { 
-                    if (!isSelected && item.route != "settings") {
+                    if (!isSelected) {
                         navController.navigate(item.route) 
                     }
                 },
@@ -170,9 +162,3 @@ fun MediTechBottomBar(
         }
     }
 }
-
-data class NavigationItem(
-    val title: String,
-    val route: String,
-    val icon: ImageVector
-)

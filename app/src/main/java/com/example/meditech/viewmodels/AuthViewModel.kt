@@ -59,7 +59,7 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun login(email: String, pass: String) {
+    fun login(email: String, pass: String, expectedRole: String? = null) {
         Log.d("MediTechAuth", "Starting login for: $email")
         if (!validateInputs(email, pass)) return
 
@@ -71,8 +71,14 @@ class AuthViewModel : ViewModel() {
                 Log.d("MediTechAuth", "Login Auth success. UID: $uid")
 
                 val document = firestore.collection("users").document(uid).get().await()
-                val role = document.getString("role") ?: "doctor"
+                val role = document.getString("role")?.lowercase() ?: "doctor"
                 android.util.Log.d("MediTechAuth", "Fetched role from Firestore: $role for UID: $uid")
+
+                val normalizedExpectedRole = expectedRole?.lowercase()
+                if (!normalizedExpectedRole.isNullOrBlank() && role != normalizedExpectedRole) {
+                    auth.signOut()
+                    throw Exception("This account is registered as $role. Please use the $role login.")
+                }
 
                 _authState.value = AuthState(isSuccess = true, userRole = role)
             } catch (e: Exception) {

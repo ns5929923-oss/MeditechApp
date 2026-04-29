@@ -22,6 +22,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.razorpay.PaymentResultListener
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.tasks.await
 
 class MainActivity : ComponentActivity(), PaymentResultListener {
     private val subscriptionViewModel: SubscriptionViewModel by viewModels()
@@ -95,12 +96,32 @@ class MainActivity : ComponentActivity(), PaymentResultListener {
                                 composable(Screen.Landing.route) { LandingScreen(navController) }
                                 composable(Screen.Login.route) { LoginScreen(navController) }
                                 composable(Screen.Register.route) { RegisterScreen(navController) }
-                                composable(Screen.DoctorDashboard.route) { DoctorDashboardScreen(navController) }
-                                composable(Screen.HospitalDashboard.route) { HospitalDashboardScreen(navController) }
-                                composable(Screen.AdminPanel.route) { AdminPanelScreen(navController) }
+                                composable(Screen.DoctorDashboard.route) {
+                                    RoleProtectedScreen(navController, "doctor") {
+                                        DoctorDashboardScreen(navController)
+                                    }
+                                }
+                                composable(Screen.HospitalDashboard.route) {
+                                    RoleProtectedScreen(navController, "hospital") {
+                                        HospitalDashboardScreen(navController)
+                                    }
+                                }
+                                composable(Screen.AdminPanel.route) {
+                                    RoleProtectedScreen(navController, "admin") {
+                                        AdminPanelScreen(navController)
+                                    }
+                                }
                                 composable(Screen.JobListings.route) { JobListingsScreen(navController) }
-                                composable(Screen.CasePortfolio.route) { CasePortfolioScreen(navController) }
-                                composable(Screen.PostJob.route) { PostJobScreen(navController) }
+                                composable(Screen.CasePortfolio.route) {
+                                    RoleProtectedScreen(navController, "doctor") {
+                                        CasePortfolioScreen(navController)
+                                    }
+                                }
+                                composable(Screen.PostJob.route) {
+                                    RoleProtectedScreen(navController, "hospital") {
+                                        PostJobScreen(navController)
+                                    }
+                                }
                                 composable(Screen.RoleSelection.route) { RoleSelectionScreen(navController) }
                                 composable("subscription/{role}") { backStackEntry ->
                                     val role = backStackEntry.arguments?.getString("role") ?: "doctor"
@@ -126,5 +147,62 @@ class MainActivity : ComponentActivity(), PaymentResultListener {
     override fun onPaymentError(code: Int, response: String?) {
         Toast.makeText(this, "Payment Failed: $response", Toast.LENGTH_SHORT).show()
         subscriptionViewModel.onPaymentError(response ?: "Unknown Error")
+    }
+}
+
+@Composable
+private fun RoleProtectedScreen(
+    navController: androidx.navigation.NavController,
+    requiredRole: String,
+    content: @Composable () -> Unit
+) {
+    var isChecking by remember { mutableStateOf(true) }
+    var isAllowed by remember { mutableStateOf(false) }
+
+    LaunchedEffect(requiredRole) {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null) {
+            navController.navigate(Screen.Landing.route) {
+                popUpTo(0) { inclusive = true }
+            }
+            return@LaunchedEffect
+        }
+
+        try {
+            val role = FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(user.uid)
+                .get()
+                .await()
+                .getString("role")
+                ?.lowercase()
+
+            if (role == requiredRole) {
+                isAllowed = true
+            } else {
+                val targetRoute = when (role) {
+                    "doctor" -> Screen.DoctorDashboard.route
+                    "hospital" -> Screen.HospitalDashboard.route
+                    "admin" -> Screen.AdminPanel.route
+                    else -> Screen.Landing.route
+                }
+                navController.navigate(targetRoute) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        } catch (_: Exception) {
+            navController.navigate(Screen.Landing.route) {
+                popUpTo(0) { inclusive = true }
+            }
+        } finally {
+            isChecking = false
+        }
+    }
+
+    when {
+        isChecking -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        isAllowed -> content()
     }
 }

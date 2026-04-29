@@ -34,23 +34,23 @@ import com.example.meditech.viewmodels.AuthViewModel
 
 @Composable
 fun LoginScreen(navController: NavController, role: String = "doctor") {
-    AuthScreen(navController, isLoginInitial = true)
+    AuthScreen(navController, isLoginInitial = true, initialRole = role)
 }
 
 @Composable
 fun RegisterScreen(navController: NavController) {
-    AuthScreen(navController, isLoginInitial = false)
+    AuthScreen(navController, isLoginInitial = false, initialRole = "doctor")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AuthScreen(navController: NavController, isLoginInitial: Boolean) {
+fun AuthScreen(navController: NavController, isLoginInitial: Boolean, initialRole: String) {
     val viewModel: AuthViewModel = viewModel()
     val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current
 
     var isLogin by remember { mutableStateOf(isLoginInitial) }
-    var userRoleState by remember { mutableStateOf("doctor") }
+    var userRoleState by remember(initialRole) { mutableStateOf(initialRole.lowercase()) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
@@ -223,7 +223,7 @@ fun AuthScreen(navController: NavController, isLoginInitial: Boolean) {
             Button(
                 onClick = { 
                     if (isLogin) {
-                        viewModel.login(email, password)
+                        viewModel.login(email, password, userRoleState)
                     } else {
                         viewModel.register(email, name, password, userRoleState)
                     }
