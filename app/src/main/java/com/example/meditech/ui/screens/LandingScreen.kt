@@ -95,7 +95,7 @@ fun LandingScreen(navController: NavController) {
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            LandingCard(
+          /*  LandingCard(
                 title = "Admin Panel",
                 description = "Manage platform operations and system analytics.",
                 icon = Icons.Default.AdminPanelSettings,
@@ -104,7 +104,7 @@ fun LandingScreen(navController: NavController) {
             )
             
             Spacer(modifier = Modifier.height(48.dp))
-            
+            */
             Text(
                 text = "TRUSTED BY LEADING INSTITUTIONS",
                 style = MaterialTheme.typography.labelLarge,
